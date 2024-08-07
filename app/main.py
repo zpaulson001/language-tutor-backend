@@ -31,18 +31,29 @@ async def root():
     return {"message": "Hello World"}
 
 
-@app.post("/")
-async def get_token(email: EmailStr, db: Session = Depends(get_db)):
+@app.post("/login")
+def get_token(email: EmailStr, db: Session = Depends(get_db)):
     user = crud.get_user_by_email(db, email=email)
     if user:
-        payload = {"sub": user.email, "exp": datetime.utcnow() + timedelta(hours=1)}
+        payload = {"sub": user.email, "exp": datetime.utcnow() + timedelta(minutes=1)}
 
         access_token = jwt.encode(payload, os.getenv("SECRET"), algorithm="HS256")
 
         print(
-            f"Sending magic link http://localhost:3000/tada?token={access_token} to {user.email}"
+            f"Sending magic link http://localhost:8000/tada/{access_token} to {user.email}"
         )
     return {"message": "Email sent"}
+
+
+@app.get("/tada/{token}")
+def login(token: str):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET"), algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 
 @app.get("/users", response_model=list[schemas.User])
