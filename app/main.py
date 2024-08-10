@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
-from fastapi import FastAPI, Depends, HTTPException
-from pydantic import EmailStr
+from typing import Annotated
+import redis
+from fastapi import Cookie, FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from . import crud, db_models, schemas
 from .database import SessionLocal, engine
+import uuid
 import jwt
 
 import os
