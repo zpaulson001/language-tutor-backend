@@ -83,7 +83,21 @@ def read_users(db: Session = Depends(get_db)):
     return users
 
 
-@app.post("/create_user", response_model=schemas.User)
+@app.get("/auth")
+def read_user(session_id: Annotated[str, Cookie()], db: Session = Depends(get_db)):
+    user_id = rc.get(f"session:{session_id}")
+    return {"user_id": user_id}
+
+
+@app.post("/logout")
+def logout(session_id: Annotated[str, Cookie()]):
+    result = rc.delete(f"session:{session_id}")
+    if result == 0:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"message": "Logged out successfully"}
+
+
+@app.post("/user", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
