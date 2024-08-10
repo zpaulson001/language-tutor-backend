@@ -16,3 +16,4 @@ So far, implemented usng FastAPI, Postgres, and SQLAlchemy.
 ## Roadmap
 
 - [ ] Basic auth and user management
+  - [ ] Add email sending service
