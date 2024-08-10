@@ -57,7 +57,14 @@ def get_token(email: EmailStr, db: Session = Depends(get_db)):
 def login(token: str):
     try:
         payload = jwt.decode(token, os.getenv("SECRET"), algorithms=["HS256"])
-        return payload
+
+        payload["sub"]
+
+        session_id = str(uuid.uuid4())
+
+        rc.set(f"session:{session_id}", payload["sub"])
+
+        return {"session_id": session_id}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
