@@ -38,20 +38,24 @@ def get_db():
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Look out world 👀"}
 
 
 @app.post("/login")
-def get_token(email: EmailStr, db: Session = Depends(get_db)):
-    user = crud.get_user_by_email(db, email=email)
-    if user:
-        payload = {"sub": user.email, "exp": datetime.utcnow() + timedelta(minutes=1)}
+def get_token(request_data: schemas.LoginRequest, db: Session = Depends(get_db)):
+    user = crud.get_user_by_email(db, email=request_data.email)
+    if not user:
+        new_user = schemas.UserCreate(email=request_data.email)
+        user = crud.create_user(db, new_user)
 
-        access_token = jwt.encode(payload, os.getenv("SECRET"), algorithm="HS256")
+    payload = {"sub": user.id, "exp": datetime.utcnow() + timedelta(hours=12)}
 
-        print(
-            f"Sending magic link http://localhost:8000/tada/{access_token} to {user.email}"
-        )
+    access_token = jwt.encode(payload, os.getenv("SECRET"), algorithm="HS256")
+
+    # TODO - Add actual email service
+    print(
+        f"Sending magic link http://localhost:5173/tada/{access_token} to {user.email}"
+    )
     return {"message": "Email sent"}
 
 
