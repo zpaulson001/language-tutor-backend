@@ -6,7 +6,7 @@ class LoginRequest(BaseModel):
 
 
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
 
 
 class UserCreate(UserBase):
