@@ -12,6 +12,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+rc = redis.Redis(
+    host=os.getenv("UPSTASH_HOST"),
+    password=os.getenv("UPSTASH_PASSWORD"),
+    port=6379,
+    ssl=True,
+)
+
+
 app = FastAPI()
 
 db_models.Base.metadata.create_all(bind=engine)
