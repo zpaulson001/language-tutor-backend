@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
-from typing import Annotated
 import redis
-from fastapi import Cookie, FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from . import crud, db_models, schemas
 from .database import SessionLocal, engine
@@ -27,13 +26,21 @@ app = FastAPI()
 db_models.Base.metadata.create_all(bind=engine)
 
 
-# Dependency
+# Dependency - DB
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+# Dependency to check for the session_id cookie
+def get_session_id(request: Request):
+    session_id = request.cookies.get("session_id")
+    if session_id is None:
+        raise HTTPException(status_code=400, detail="Session ID cookie not set")
+    return session_id
 
 
 @app.get("/")
@@ -84,13 +91,13 @@ def read_users(db: Session = Depends(get_db)):
 
 
 @app.get("/auth")
-def read_user(session_id: Annotated[str, Cookie()], db: Session = Depends(get_db)):
+def read_user(session_id: str = Depends(get_session_id), db: Session = Depends(get_db)):
     user_id = rc.get(f"session:{session_id}")
     return {"user_id": user_id}
 
 
 @app.post("/logout")
-def logout(session_id: Annotated[str, Cookie()]):
+def logout(session_id: str = Depends(get_session_id)):
     result = rc.delete(f"session:{session_id}")
     if result == 0:
         raise HTTPException(status_code=404, detail="Session not found")
