@@ -35,6 +35,23 @@ def get_db():
         db.close()
 
 
+# Dependency - Reids Client
+def get_rc():
+    rc = Redis(
+        host="localhost",
+        port=6379,
+    )
+    try:
+        yield rc
+    finally:
+        rc.close()
+
+
+def get_nlp():
+    nlp = spacy.load("zh_core_web_sm")
+    yield nlp
+
+
 # Dependency to check for the session_id cookie
 def get_session_id(request: Request):
     session_id = request.cookies.get("session_id")
