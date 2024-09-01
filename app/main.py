@@ -83,8 +83,8 @@ def get_token(request_data: schemas.LoginRequest, db: Session = Depends(get_db))
     return {"message": "Email sent"}
 
 
-@app.get("/tada/{token}")
-def login(token: str):
+@app.post("/tada/{token}")
+def login(token: str, response: Response, rc: Redis = Depends(get_rc)):
     try:
         payload = jwt.decode(token, os.getenv("SECRET"), algorithms=["HS256"])
 
@@ -93,6 +93,8 @@ def login(token: str):
         session_id = str(uuid.uuid4())
 
         rc.set(f"session:{session_id}", payload["sub"])
+
+        response.set_cookie(key="session_id", value=session_id, httponly=True)
 
         return {"session_id": session_id}
     except jwt.ExpiredSignatureError:
