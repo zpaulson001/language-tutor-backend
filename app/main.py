@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 from groq import Groq
 from redis import Redis
@@ -68,7 +68,7 @@ def get_token(request_data: schemas.LoginRequest, db: Session = Depends(get_db))
         new_user = schemas.UserCreate(email=request_data.email)
         user = crud.create_user(db, new_user)
 
-    payload = {"sub": user.id, "exp": datetime.now() + timedelta(hours=12)}
+    payload = {"sub": user.id, "exp": datetime.now(timezone.utc) + timedelta(seconds=5)}
 
     access_token = jwt.encode(payload, os.getenv("SECRET"), algorithm="HS256")
 
@@ -84,11 +84,11 @@ def login(token: str, response: Response, rc: Redis = Depends(get_rc)):
     try:
         payload = jwt.decode(token, os.getenv("SECRET"), algorithms=["HS256"])
 
-        payload["sub"]
+        user_id  = payload["sub"]
 
         session_id = str(uuid.uuid4())
 
-        rc.set(f"session:{session_id}", payload["sub"])
+        rc.set(f"session:{session_id}", user_id)
 
         response.set_cookie(key="session_id", value=session_id, httponly=True)
 
