@@ -68,7 +68,7 @@ def get_token(request_data: schemas.LoginRequest, db: Session = Depends(get_db))
         new_user = schemas.UserCreate(email=request_data.email)
         user = crud.create_user(db, new_user)
 
-    payload = {"sub": user.id, "exp": datetime.now(timezone.utc) + timedelta(seconds=5)}
+    payload = {"sub": user.id, "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
 
     access_token = jwt.encode(payload, os.getenv("SECRET"), algorithm="HS256")
 
