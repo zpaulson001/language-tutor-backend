@@ -108,7 +108,6 @@ def read_users(db: Session = Depends(get_db)):
 @app.get("/auth")
 def read_user(
     session_id: str = Depends(get_session_id),
-    db: Session = Depends(get_db),
     rc: Redis = Depends(get_rc),
 ):
     user_id = rc.get(f"session:{session_id}")
