@@ -111,6 +111,9 @@ def read_user(
     rc: Redis = Depends(get_rc),
 ):
     user_id = rc.get(f"session:{session_id}")
+    if not user_id:
+        raise HTTPException(status_code=404, detail="Session not found")
+
     return {"user_id": user_id}
 
 
