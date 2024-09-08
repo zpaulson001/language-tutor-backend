@@ -1,8 +1,8 @@
 """add user_settings and language tables
 
-Revision ID: 5f101931f1bb
+Revision ID: 46e8f3be9cb8
 Revises: 9309af65374e
-Create Date: 2024-09-07 19:42:36.082030
+Create Date: 2024-09-07 19:59:23.815092
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5f101931f1bb'
+revision: str = '46e8f3be9cb8'
 down_revision: Union[str, None] = '9309af65374e'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -28,12 +28,11 @@ def upgrade() -> None:
     sa.UniqueConstraint('language_code')
     )
     op.create_table('user_settings',
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('current_language', sa.Integer(), nullable=False),
+    sa.Column('current_language', sa.Integer(), server_default=sa.text('1'), nullable=False),
     sa.ForeignKeyConstraint(['current_language'], ['language.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
-    sa.PrimaryKeyConstraint('id'),
+    sa.PrimaryKeyConstraint('user_id'),
     sa.UniqueConstraint('user_id')
     )
     # ### end Alembic commands ###
