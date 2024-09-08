@@ -34,14 +34,6 @@ target_metadata = Base.metadata
 # ... etc.
 
 
-def include_object(object, name, type_, reflected, compare_to):
-    if type_ == "column" and name.startswith("xata_"):
-        return False
-    if type_ == "unique_constraint" and name == "user__pgroll_new_xata_id_key":
-        return False
-    return True
-
-
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -61,7 +53,6 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -85,7 +76,6 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            include_object=include_object,
         )
 
         with context.begin_transaction():
