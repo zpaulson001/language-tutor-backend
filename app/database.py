@@ -11,14 +11,7 @@ class Base(DeclarativeBase):
     pass
 
 
-DB_USERNAME = os.getenv("DB_USERNAME")
-DB_PASSWORD = os.getenv("XATA_API_KEY")
-DB_HOSTNAME = os.getenv("DB_HOSTNAME")
-DB_NAME = os.getenv("DB_NAME")
-
-DATABASE_URL = (
-    f"postgresql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOSTNAME}/{DB_NAME}?sslmode=require"
-)
+DATABASE_URL = os.getenv("DB_URL")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
