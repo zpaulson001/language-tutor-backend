@@ -1,29 +1,23 @@
-from datetime import datetime, timedelta
-import redis
-from fastapi import FastAPI, Depends, HTTPException, Request
+from datetime import datetime, timedelta, timezone
+import json
+from groq import Groq
+from redis import Redis
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
+import spacy
+from spacy.language import Language
 from sqlalchemy.orm import Session
-from . import crud, db_models, schemas
-from .database import SessionLocal, engine
+from . import crud, schemas
+from .database import SessionLocal
 import uuid
 import jwt
+import pinyin
 
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-
-rc = redis.Redis(
-    host=os.getenv("UPSTASH_HOST"),
-    password=os.getenv("UPSTASH_PASSWORD"),
-    port=6379,
-    ssl=True,
-)
-
-
 app = FastAPI()
-
-db_models.Base.metadata.create_all(bind=engine)
 
 
 # Dependency - DB
@@ -33,6 +27,23 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# Dependency - Reids Client
+def get_rc():
+    rc = Redis(
+        host="localhost",
+        port=6379,
+    )
+    try:
+        yield rc
+    finally:
+        rc.close()
+
+
+def get_nlp():
+    nlp = spacy.load("zh_core_web_sm")
+    yield nlp
 
 
 # Dependency to check for the session_id cookie
@@ -55,27 +66,29 @@ def get_token(request_data: schemas.LoginRequest, db: Session = Depends(get_db))
         new_user = schemas.UserCreate(email=request_data.email)
         user = crud.create_user(db, new_user)
 
-    payload = {"sub": user.id, "exp": datetime.utcnow() + timedelta(hours=12)}
+    payload = {"sub": user.id, "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}
 
     access_token = jwt.encode(payload, os.getenv("SECRET"), algorithm="HS256")
 
     # TODO - Add actual email service
     print(
-        f"Sending magic link http://localhost:5173/tada/{access_token} to {user.email}"
+        f"Sending magic link: {os.getenv("FRONTEND_URL")}/tada/{access_token} to {user.email}"
     )
     return {"message": "Email sent"}
 
 
-@app.get("/tada/{token}")
-def login(token: str):
+@app.post("/tada/{token}")
+def login(token: str, response: Response, rc: Redis = Depends(get_rc)):
     try:
         payload = jwt.decode(token, os.getenv("SECRET"), algorithms=["HS256"])
 
-        payload["sub"]
+        user_id  = payload["sub"]
 
         session_id = str(uuid.uuid4())
 
-        rc.set(f"session:{session_id}", payload["sub"])
+        rc.set(f"session:{session_id}", user_id)
+
+        response.set_cookie(key="session_id", value=session_id, httponly=True)
 
         return {"session_id": session_id}
     except jwt.ExpiredSignatureError:
@@ -91,13 +104,19 @@ def read_users(db: Session = Depends(get_db)):
 
 
 @app.get("/auth")
-def read_user(session_id: str = Depends(get_session_id), db: Session = Depends(get_db)):
+def read_user(
+    session_id: str = Depends(get_session_id),
+    rc: Redis = Depends(get_rc),
+):
     user_id = rc.get(f"session:{session_id}")
+    if not user_id:
+        raise HTTPException(status_code=404, detail="Session not found")
+
     return {"user_id": user_id}
 
 
 @app.post("/logout")
-def logout(session_id: str = Depends(get_session_id)):
+def logout(session_id: str = Depends(get_session_id), rc: Redis = Depends(get_rc)):
     result = rc.delete(f"session:{session_id}")
     if result == 0:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -110,3 +129,49 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     return crud.create_user(db=db, user=user)
+
+
+@app.post("/story")
+def generate_story( story_request: schemas.StoryGenerate,
+    nlp: Language = Depends(get_nlp),
+    rc: Redis = Depends(get_rc),
+):
+
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": f"You are a language tutor helping a student learning Chinese through stories. Your student is {story_request.level} level.  Your job is to take the given prompt and generate a short story using simplified Chinese characters. Don't include any English or any translation.",
+            },
+            {"role": "user", "content": story_request.story_prompt},
+        ],
+        model="llama-3.1-70b-versatile",
+    )
+
+    message = chat_completion.choices[0].message.content
+
+    doc = nlp(message)
+
+    words = []
+
+    for token in doc:
+        response = {
+            "token": token.text,
+            "is_word": token.is_alpha,
+            "ent_type": token.ent_type_,
+            "meaning": None,
+            "pinyin": None,
+        }
+
+        if token.is_alpha:
+            result = rc.get(f"dict:{token.text}")
+            jsonResult = json.loads(result) if result else None
+            if jsonResult:
+                response["meaning"] = jsonResult["english"]
+                response["pinyin"] = pinyin.get(token.text)
+
+        words.append(response)
+
+    return words
