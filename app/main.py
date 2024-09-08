@@ -6,8 +6,8 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Response
 import spacy
 from spacy.language import Language
 from sqlalchemy.orm import Session
-from . import crud, db_models, schemas
-from .database import SessionLocal, engine
+from . import crud, schemas
+from .database import SessionLocal
 import uuid
 import jwt
 import pinyin
@@ -18,8 +18,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
-
-db_models.Base.metadata.create_all(bind=engine)
 
 
 # Dependency - DB
