@@ -26,8 +26,8 @@ So far, implemented usng FastAPI, Postgres, and SQLAlchemy.
 
 ## Roadmap
 
-- [ ] Magic link auth
+- [x] Magic link auth
+  - [x] Add email sending service
 - [ ] Switch to poetry or uv for package management
-  - [ ] Add email sending service
 - [ ] Knock out features in bold
 - [ ] Set up CI/CD
