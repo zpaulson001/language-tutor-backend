@@ -1,11 +1,14 @@
 # Language Tutor
 
-**The goal:** become conversational in Chinese.
+**The goals:**
+
+1. Become conversational in Chinese.
+2. Supplement what my brother and his wife are learning in Duolingo.
 
 **The issues:**
 
-1. not enough material to read and listen to within my skill level
-2. difficult to schedule time with a conversation partner
+1. Not enough material to read and listen to within my skill level
+2. Difficult to find a good conversation partner.
 
 **The solution:** ...LLMs
 
@@ -13,7 +16,20 @@
 
 So far, implemented usng FastAPI, Postgres, and SQLAlchemy.
 
+## Core Features
+
+- [ ] **Generate short stories based on a prompt in Chinese, Swedish, and Spanish**
+- [ ] **Hear stories read aloud**
+- [ ] **See the pronunciation and definition of a word on hover**
+- [ ] Save words to review lists
+- [ ] Generate stories based on words needing review
+
 ## Roadmap
 
-- [ ] Basic auth and user management
-  - [ ] Add email sending service
+- [x] Magic link auth
+  - [x] Add email sending service
+- [ ] Switch to poetry or uv for package management
+- [ ] Knock out features in bold
+- [ ] Set up CI/CD
+  - [ ] Github actions to build and deploy
+  - [ ] Linting and formatting
