@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, PrimaryKeyConstraint, text
+from sqlalchemy import ForeignKeyConstraint, PrimaryKeyConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
