@@ -6,6 +6,8 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Response
 import spacy
 from spacy.language import Language
 from sqlalchemy.orm import Session
+
+from app.utils.email_service import send_mail
 from . import crud, schemas
 from .database import SessionLocal
 import uuid
@@ -13,9 +15,6 @@ import jwt
 import pinyin
 
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = FastAPI()
 
@@ -70,10 +69,12 @@ def get_token(request_data: schemas.LoginRequest, db: Session = Depends(get_db))
 
     access_token = jwt.encode(payload, os.getenv("SECRET"), algorithm="HS256")
 
-    # TODO - Add actual email service
-    print(
-        f"Sending magic link: {os.getenv("FRONTEND_URL")}/tada/{access_token} to {user.email}"
+    send_mail(
+        recipient=user.email,
+        subject="Log in to Language Tutor",
+        content=f"Here's your magic link! Click to log in: {os.getenv("FRONTEND_URL")}/tada/{access_token}",
     )
+
     return {"message": "Email sent"}
 
 
@@ -82,7 +83,7 @@ def login(token: str, response: Response, rc: Redis = Depends(get_rc)):
     try:
         payload = jwt.decode(token, os.getenv("SECRET"), algorithms=["HS256"])
 
-        user_id  = payload["sub"]
+        user_id = payload["sub"]
 
         session_id = str(uuid.uuid4())
 
@@ -132,7 +133,8 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @app.post("/story")
-def generate_story( story_request: schemas.StoryGenerate,
+def generate_story(
+    story_request: schemas.StoryGenerate,
     nlp: Language = Depends(get_nlp),
     rc: Redis = Depends(get_rc),
 ):
