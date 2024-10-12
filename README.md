@@ -31,3 +31,5 @@ So far, implemented usng FastAPI, Postgres, and SQLAlchemy.
 - [ ] Switch to poetry or uv for package management
 - [ ] Knock out features in bold
 - [ ] Set up CI/CD
+  - [ ] Github actions to build and deploy
+  - [ ] Linting and formatting
